@@ -1,0 +1,67 @@
+version: "3.0"
+
+volumes:
+  mongo_data: {}
+
+services:
+  ui:
+    image: swaggerapi/swagger-ui
+    ports: ["8080:8080"]
+    volumes:
+      - .:/app
+    environment:
+      - PORT=8080
+      - SWAGGER_JSON=/app/testSpec.yml
+#      - SWAGGER_JSON_URL=https://petstore3.swagger.io/api/v3/openapi.json
+
+  app:
+    #    image: php:8.2.10-apache
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: ['8081:80']
+    volumes:
+      - .:/app
+      - ./MyWebConf.conf:/etc/apache2/sites-enabled/MyWebConf.conf
+      - ./html:/var/www/html
+      - ./xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+  mongo:
+    image: mongo:7.0
+    volumes:
+      - "mongo_data:/data/db"
+    ports: [ "27017:27017" ]
+#    entrypoint: 'mongod --replSet sandbox --storageEngine=wiredTiger --bind_ip_all --quiet -v'
+
+  # Based on https://github.com/confluentinc/kafka-tutorials/blob/master/_includes/tutorials/aggregating-sum/ksql/code/docker-compose.yml
+  kafka:
+    image: confluentinc/cp-kafka
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: MkU3OEVBNNTJTcwENDM2Qk
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8082:8080
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092

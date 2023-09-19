@@ -1,0 +1,8 @@
+{
+  "variableNamingConvention": "camelCase",
+  "disallowAdditionalPropertiesIfNotPresent": false,
+  "packagePath": "MyLib",
+  "srcBasePath": "src",
+  "modelPackage": "Models",
+  "apiPackage": "Api"
+}

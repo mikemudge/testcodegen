@@ -1,0 +1,133 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Simple API Test
+  description: Testing a generic API with different schemas
+servers:
+  - url: http://localhost:8081/api/v1/
+    description: Local server
+components:
+  schemas:
+    TestRemoteRef:
+      type: object
+      properties:
+        test_pet:
+          $ref: https://petstore3.swagger.io/api/v3/openapi.json#/components/schemas/Pet
+    PurchaseItem:
+      type: object
+      required: ['qty','title', 'url', 'price']
+      properties:
+        qty:
+          type: integer
+        title:
+          type: string
+        url:
+          type: string
+        price:
+          type: number
+    Purchase:
+      type: object
+      required: ['items']
+      properties:
+        _id:
+          type: string
+          readOnly: true
+        email:
+          type: string
+        user_id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseItem'
+        price:
+          type: number
+        qty:
+          type: integer
+
+    ValidationError:
+      type: object
+      properties:
+        errormsg:
+          type: string
+        error:
+          type: integer
+
+  responses:
+    400Error:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+paths:
+  /Purchase:
+    get:
+      description: Returns a list of purchase
+      responses:
+        '200':
+          description: Successfully returned a list of purchase
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Purchase'
+        '400':
+          $ref: '#/components/responses/400Error'
+    post:
+      description: Lets a user post a new purchase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Purchase'
+      responses:
+        '200':
+          description: Successfully created a new artist
+        '400':
+          $ref: '#/components/responses/400Error'
+  /Purchase/{id}:
+    get:
+      description: Returns a list of purchase
+      responses:
+        '200':
+          description: Successfully returned a list of purchase
+          content:
+            application/json:
+              schema:
+                type: object
+                required: ["purchase_id"]
+                properties:
+                  purchase_id:
+                    type: string
+                  purchase_key:
+                    default: 'sid'
+                    type: string
+                    enum: ['sid', 'extid']
+    put:
+      description: Lets a user modify an existing purchase
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Purchase'
+      responses:
+        '200':
+          description: Successfully updated the purchase
+        '400':
+          $ref: '#/components/responses/400Error'
+    delete:
+      description: Lets a user modify an existing purchase
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Purchase'
+      responses:
+        '200':
+          description: Successfully updated the purchase
+        '400':
+          $ref: '#/components/responses/400Error'
